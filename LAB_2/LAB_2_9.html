@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Snake - Ultimate</title>
+    <style>
+        :root {
+            --bg-color: #0f0f1a;
+            --snake-head: #00ff88;
+            --snake-body: #00cc6a;
+            --food-color: #ff0055;
+            --text-color: #ffffff;
+            --hud-bg: rgba(0, 0, 0, 0.6);
+            --damage-color: rgba(255, 0, 0, 0.3);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            /* Required for screen shake animation */
+            position: relative; 
+        }
+
+        /* --- Animations --- */
+
+        /* 1. Score Pop Animation */
+        @keyframes scorePop {
+            0% { transform: scale(1); color: #fff; }
+            50% { transform: scale(1.8); color: var(--snake-head); text-shadow: 0 0 20px var(--snake-head); }
+            100% { transform: scale(1); color: #fff; }
+        }
+
+        .score-anim {
+            animation: scorePop 0.2s ease-out;
+        }
+
+        /* 2. Damage/Shake Animation */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .damage-effect {
+            animation: shake 0.5s;
+        }
+
+        /* Red flash overlay */
+        #damage-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--damage-color);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+            z-index: 15;
+        }
+        
+        .damage-active {
+            opacity: 1 !important;
+        }
+
+        /* --- UI Elements --- */
+
+        canvas {
+            display: block;
+            background-color: var(--bg-color);
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--hud-bg);
+            padding: 10px 30px;
+            border-radius: 30px;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        .hud-item {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #score { display: inline-block; transition: color 0.1s; }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 26, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 20;
+        }
+
+        #overlay h1 {
+            font-size: 4rem;
+            margin: 0 0 10px 0;
+            color: var(--snake-head);
+            text-shadow: 0 0 20px var(--snake-head);
+            letter-spacing: 10px;
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            background: transparent;
+            color: var(--snake-head);
+            border: 2px solid var(--snake-head);
+            cursor: pointer;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--snake-head);
+            color: var(--bg-color);
+            box-shadow: 0 0 30px var(--snake-head);
+        }
+
+        /* History Table Styles */
+        #history-container {
+            margin-top: 30px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #history-container h3 {
+            margin: 0 0 10px 0;
+            color: #ccc;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+
+        #history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        .history-score { color: #fff; font-weight: bold; }
+
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <div id="damage-overlay"></div>
+
+    <div id="hud">
+        <div class="hud-item">Score: <span id="score">0</span></div>
+        <div class="hud-item">Lives: <span id="hearts">❤️❤️❤️</span></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="overlay">
+        <h1 id="overlay-title">NEON SNAKE</h1>
+        <p id="overlay-msg">Arrow Keys to Move • Full Screen</p>
+        
+        <button class="btn" onclick="startGame()">PLAY</button>
+
+        <div id="history-container">
+            <h3>Recent Games</h3>
+            <ul id="history-list">
+                <li class="history-item" style="justify-content:center;">No games played yet</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+        const heartsElement = document.getElementById("hearts");
+        const overlay = document.getElementById("overlay");
+        const overlayTitle = document.getElementById("overlay-title");
+        const overlayMsg = document.getElementById("overlay-msg");
+        const damageOverlay = document.getElementById("damage-overlay");
+        const historyList = document.getElementById("history-list");
+        const btn = document.querySelector(".btn");
+
+        const TILE_SIZE = 25;
+        const GAME_SPEED = 120; // 1.20x slower (Standard is usually 100)
+
+        // --- Game State ---
+        let score = 0;
+        let lives = 3;
+        let dx = TILE_SIZE;
+        let dy = 0;
+        let gameInterval;
+        let isGameRunning = false;
+        let snake = [];
+        let foodX, foodY;
+        let tileCountX, tileCountY;
+        
+        // Game History Array
+        let gameHistory = []; 
+
+        // --- Initialization ---
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            canvas.width -= canvas.width % TILE_SIZE;
+            canvas.height -= canvas.height % TILE_SIZE;
+            tileCountX = canvas.width / TILE_SIZE;
+            tileCountY = canvas.height / TILE_SIZE;
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            if(isGameRunning) createFood();
+        });
+        resizeCanvas();
+
+        function startGame() {
+            score = 0;
+            lives = 3;
+            updateLivesUI();
+            scoreElement.innerText = score;
+            
+            resetSnakePosition();
+            
+            overlay.classList.add("hidden");
+            isGameRunning = true;
+            
+            createFood();
+            
+            clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, GAME_SPEED);
+        }
+
+        function resetSnakePosition() {
+            const startX = Math.floor(tileCountX / 2) * TILE_SIZE;
+            const startY = Math.floor(tileCountY / 2) * TILE_SIZE;
+            
+            dx = TILE_SIZE;
+            dy = 0;
+            
+            snake = [
+                {x: startX, y: startY},
+                {x: startX - TILE_SIZE, y: startY},
+                {x: startX - (TILE_SIZE*2), y: startY}
+            ];
+        }
+
+        function gameLoop() {
+            if (!isGameRunning) return;
+
+            if (checkCollision()) {
+                handleCrash();
+                return;
+            }
+
+            clearCanvas();
+            drawFood();
+            advanceSnake();
+            drawSnake();
+        }
+
+        // --- Core Logic ---
+
+        function clearCanvas() {
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-color');
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function advanceSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
+
+            if (head.x === foodX && head.y === foodY) {
+                // Score Increase Logic
+                score += 10;
+                scoreElement.innerText = score;
+                triggerScoreAnimation(); // ANIMATION TRIGGER
+                createFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function drawSnake() {
+            snake.forEach((part, index) => {
+                if (index === 0) {
+                    ctx.fillStyle = "#00ff88"; 
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = "#00ff88";
+                } else {
+                    ctx.fillStyle = "#00cc6a";
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fillRect(part.x, part.y, TILE_SIZE - 2, TILE_SIZE - 2);
+                ctx.shadowBlur = 0;
+            });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = "#ff0055";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#ff0055";
+            ctx.beginPath();
+            ctx.arc(foodX + TILE_SIZE/2, foodY + TILE_SIZE/2, TILE_SIZE/2 - 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function createFood() {
+            foodX = Math.floor(Math.random() * tileCountX) * TILE_SIZE;
+            foodY = Math.floor(Math.random() * tileCountY) * TILE_SIZE;
+            snake.forEach(part => {
+                if (part.x === foodX && part.y === foodY) createFood();
+            });
+        }
+
+        // --- Collision & Animation System ---
+
+        function checkCollision() {
+            const head = snake[0];
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) return true;
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].x === head.x && snake[i].y === head.y) return true;
+            }
+            return false;
+        }
+
+        function handleCrash() {
+            lives--;
+            updateLivesUI();
+            triggerDamageAnimation(); // ANIMATION TRIGGER
+
+            if (lives > 0) {
+                resetSnakePosition();
+                clearCanvas();
+                drawSnake();
+                drawFood();
+            } else {
+                gameOver();
+            }
+        }
+
+        // --- Animation Functions ---
+
+        function triggerScoreAnimation() {
+            // Remove class if it exists to restart animation
+            scoreElement.classList.remove("score-anim");
+            // Force reflow (magic trick to restart CSS animation)
+            void scoreElement.offsetWidth;
+            // Add class back
+            scoreElement.classList.add("score-anim");
+        }
+
+        function triggerDamageAnimation() {
+            // 1. Shake the body
+            document.body.classList.add("damage-effect");
+            // 2. Flash red overlay
+            damageOverlay.classList.add("damage-active");
+
+            // Remove effects after 500ms
+            setTimeout(() => {
+                document.body.classList.remove("damage-effect");
+                damageOverlay.classList.remove("damage-active");
+            }, 500);
+        }
+
+        function updateLivesUI() {
+            let heartsString = "";
+            for(let i=0; i<lives; i++) heartsString += "❤️";
+            heartsElement.innerText = heartsString.length > 0 ? heartsString : "💀";
+        }
+
+        // --- Game Over & History ---
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            isGameRunning = false;
+            
+            // Save to History
+            saveGameToHistory(score);
+            updateHistoryUI();
+
+            overlayTitle.innerText = "GAME OVER";
+            overlayMsg.innerText = `Final Score: ${score}`;
+            btn.innerText = "RETRY";
+            overlay.classList.remove("hidden");
+        }
+
+        function saveGameToHistory(finalScore) {
+            const date = new Date();
+            const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Add new game to start of array
+            gameHistory.unshift({ score: finalScore, time: timeString });
+            
+            // Keep only last 5 games
+            if (gameHistory.length > 5) {
+                gameHistory.pop();
+            }
+        }
+
+        function updateHistoryUI() {
+            historyList.innerHTML = "";
+            
+            gameHistory.forEach((game, index) => {
+                const li = document.createElement("li");
+                li.className = "history-item";
+                li.innerHTML = `
+                    <span>Game ${index + 1} (${game.time})</span>
+                    <span class="history-score">${game.score} pts</span>
+                `;
+                historyList.appendChild(li);
+            });
+        }
+
+        // --- Controls ---
+
+        document.addEventListener("keydown", changeDirection);
+
+        function changeDirection(event) {
+            const LEFT = 37; const RIGHT = 39; const UP = 38; const DOWN = 40;
+            const keyPressed = event.keyCode;
+            const goingUp = dy === -TILE_SIZE;
+            const goingDown = dy === TILE_SIZE;
+            const goingRight = dx === TILE_SIZE;
+            const goingLeft = dx === -TILE_SIZE;
+
+            if (keyPressed === LEFT && !goingRight) { dx = -TILE_SIZE; dy = 0; }
+            if (keyPressed === UP && !goingDown) { dx = 0; dy = -TILE_SIZE; }
+            if (keyPressed === RIGHT && !goingLeft) { dx = TILE_SIZE; dy = 0; }
+            if (keyPressed === DOWN && !goingUp) { dx = 0; dy = TILE_SIZE; }
+        }
+    </script>
+</body>
+</html>
