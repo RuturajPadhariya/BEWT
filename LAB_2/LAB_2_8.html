@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Example</title>
+</head>
+<body>
+
+    <script>
+        
+        class Person {
+            constructor(name, age) {
+                this.name = name;
+                this.age = age;
+            }
+
+            introduce() {
+                console.log(`Hello, my name is ${this.name} and I am ${this.age} years old.`);
+            }
+        }
+
+        const person1 = new Person('Ruturaj', 18);
+        person1.introduce();
+
+        const person2 = new Person('Tej', 69);
+        person2.introduce();
+
+    </script>
+</body>
+</html>
