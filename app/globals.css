@@ -1,19 +1,16 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #121212;
+  --foreground: #ffffff;
+  --muted: #2a2a2a;
+  --border: #404040;
 }
 
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
 }
 
 body {
@@ -35,8 +32,95 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+html {
+  color-scheme: dark;
+}
+
+/* Dark theme overrides for Bootstrap */
+.bg-light {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+}
+
+.text-primary {
+  color: #0d6efd !important;
+}
+
+.text-secondary {
+  color: #6c757d !important;
+}
+
+.text-dark {
+  color: var(--foreground) !important;
+}
+
+.card {
+  background-color: var(--muted) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.card-header {
+  background-color: var(--border) !important;
+  border-bottom-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.btn-outline-primary {
+  color: #0d6efd !important;
+  border-color: #0d6efd !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: #0d6efd !important;
+  color: white !important;
+}
+
+.form-control {
+  background-color: var(--muted) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.form-control:focus {
+  background-color: var(--muted) !important;
+  border-color: #0d6efd !important;
+  color: var(--foreground) !important;
+}
+
+.alert {
+  background-color: var(--muted) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.alert-info {
+  background-color: #0f5132 !important;
+  border-color: #0f5132 !important;
+  color: #d1ecf1 !important;
+}
+
+.list-group-item {
+  background-color: var(--muted) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+.btn {
+  border-color: var(--border) !important;
+}
+
+.btn-primary {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+}
+
+.btn-success {
+  background-color: #198754 !important;
+  border-color: #198754 !important;
+}
+
+.btn-dark {
+  background-color: #212529 !important;
+  border-color: #212529 !important;
 }

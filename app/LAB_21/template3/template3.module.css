@@ -1,0 +1,43 @@
+.template3-nav {
+    background-color: #212529 !important;
+    border-bottom: 1px solid #404040;
+}
+
+.template3-main {
+    background-color: var(--background);
+    color: var(--foreground);
+    min-height: calc(100vh - 60px);
+}
+
+.creative-card {
+    background-color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    color: var(--foreground);
+}
+
+.creative-card:hover {
+    background-color: #404040;
+    border-color: #0d6efd;
+    transform: translateY(-5px);
+}
+
+.btn-creative {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-creative:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.form-control-custom {
+    background-color: var(--muted) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--foreground) !important;
+}
+
+.form-control-custom::placeholder {
+    color: #6c757d !important;
+}
